@@ -20,5 +20,3 @@ class MongoDB:
 
 if __name__ == '__main__':
     client = MongoDB()
-    print(1)
-
