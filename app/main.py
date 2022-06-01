@@ -2,34 +2,84 @@ from telethon import TelegramClient, events
 import logging
 import dotenv
 import os
-from reciever_conf import bot_config
+from receiver_conf import ReceiverBotConfig
+from sender_bot import SenderBotConfig
 from pathlib import Path
+from message import Message
+from telebot import types
+
+images_path = Path(__file__).parent / 'images'
 
 logger = logging.getLogger('Receiver')
 dotenv.load_dotenv(Path(__file__).parent.joinpath('.env'))
 receiver_bot = TelegramClient('nft_parser', int(os.getenv('API_ID')), os.getenv('API_HASH'))
-# sender_bot = TelegramClient('nft_sender', int(os.getenv('API_ID')), os.getenv('API_HASH'))
-# client = MongoDB()
-config = bot_config()
+
+receiver_config = ReceiverBotConfig()
+
+sender_config = SenderBotConfig()
+sender_bot = sender_config.get_bot_instance()
 
 
-@receiver_bot.on(events.NewMessage(chats=config.chats_to_monitor))
+def get_media_paths(media_path):
+    if not media_path:
+        return None
+    name = media_path.split(' ')[0].rstrip('.jpg')
+    return [img for img in images_path.iterdir() if str(img).startswith(name)]
+
+
+def send_message(parsed_message: Message):
+    # TODO: update channels to share parsed message
+    # images = []
+    # for path in parsed_message.media:
+    if parsed_message.media:
+        with open(parsed_message.media, 'rb') as file:
+            sender_bot.send_photo(chat_id='254901339',
+                                  photo=file,
+                                  caption=str(parsed_message),
+                                  parse_mode='HTML')
+    else:
+        sender_bot.send_message(chat_id='254901339',
+                                text=str(parsed_message),
+                                parse_mode='HTML')
+
+
+@receiver_bot.on(events.NewMessage(chats=receiver_config.chats_to_monitor))
 async def handle_nft(event):
     sender_name = event.sender.username
     message_chat = event.chat.username if event.chat.username else await event.get_sender().username
-    message_info = event.message.to_dict()
-    text_message = message_info['message']
-    data = {
-        'chat': message_chat,
-        'sender': sender_name,
-        'message': text_message,
-    }
-    # client.save_data('messages', data)
+    # message_info = event.message.to_dict()
+    message_text = event.message.message
+
+    if not message_text:
+        return
+
+    media_path = await receiver_bot.download_media(event.message.media, str(images_path))
+
+    # media_path = get_media_paths(media_path)
+
+
+    message = Message(
+        sender_nickname=sender_name,
+        message_chat=message_chat,
+        message_text=message_text,
+        media=media_path
+    )
+
     print('Message parsed')
+
+    send_message(message)
     # await receiver_bot.send_message('etokarinakarina', ev)
 
 
 receiver_bot.start()
 
-# sender_bot.start(bot_token=os.getenv('BOT_TOKEN'))
 receiver_bot.run_until_disconnected()
+
+@sender_bot.message_handler(func=lambda message: 'nft' in message.text.lower())
+def check_nft(message):
+    sender_bot.reply_to(message, 'I like nft!')
+
+
+@sender_bot.message_handler(func=sender_config.validate_sender)
+def test(message):
+    sender_bot.reply_to(message, 'user is valid')
