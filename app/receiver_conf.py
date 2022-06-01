@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 
-class bot_config:
+class ReceiverBotConfig:
     chats_to_monitor = None
 
     def __init__(self):
