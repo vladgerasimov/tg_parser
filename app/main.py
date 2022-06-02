@@ -6,7 +6,8 @@ from receiver_conf import ReceiverBotConfig
 from sender_bot import SenderBotConfig
 from pathlib import Path
 from message import Message
-from telebot import types
+# from telebot import types
+from threading import Thread
 
 images_path = Path(__file__).parent / 'images'
 
@@ -68,12 +69,14 @@ async def handle_nft(event):
     print('Message parsed')
 
     send_message(message)
+
+    if media_path:
+        Path(media_path).unlink(missing_ok=True)
     # await receiver_bot.send_message('etokarinakarina', ev)
 
 
-receiver_bot.start()
 
-receiver_bot.run_until_disconnected()
+
 
 @sender_bot.message_handler(func=lambda message: 'nft' in message.text.lower())
 def check_nft(message):
@@ -83,3 +86,11 @@ def check_nft(message):
 @sender_bot.message_handler(func=sender_config.validate_sender)
 def test(message):
     sender_bot.reply_to(message, 'user is valid')
+
+
+Thread(target=sender_bot.infinity_polling).start()
+
+receiver_bot.start()
+receiver_bot.run_until_disconnected()
+
+# def
