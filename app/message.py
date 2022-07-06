@@ -9,6 +9,9 @@ class Message:
     media: str
 
     def __str__(self):
+        if not self.sender_nickname:
+            self.sender_nickname = ''
+
         return (f'From @{self.make_italic(self.message_chat)}\n\n'
                 f'{self.message_text}\n\n'
                 f'by @{self.make_bold(self.sender_nickname)}'

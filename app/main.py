@@ -6,10 +6,9 @@ from receiver_conf import ReceiverBotConfig
 from sender_bot import SenderBotConfig
 from pathlib import Path
 from message import Message
-# from telebot import types
 from threading import Thread
 
-images_path = Path(__file__).parent / 'images'
+images_path = Path(__file__) / 'images'
 
 logger = logging.getLogger('Receiver')
 dotenv.load_dotenv(Path(__file__).parent.joinpath('.env'))
@@ -30,34 +29,33 @@ def get_media_paths(media_path):
 
 def send_message(parsed_message: Message):
     # TODO: update channels to share parsed message
-    # images = []
-    # for path in parsed_message.media:
     if parsed_message.media:
         with open(parsed_message.media, 'rb') as file:
-            sender_bot.send_photo(chat_id='254901339',
+            sender_bot.send_photo(chat_id='-1001753902997',
                                   photo=file,
                                   caption=str(parsed_message),
                                   parse_mode='HTML')
     else:
-        sender_bot.send_message(chat_id='254901339',
+        sender_bot.send_message(chat_id='-1001753902997',
                                 text=str(parsed_message),
                                 parse_mode='HTML')
 
 
 @receiver_bot.on(events.NewMessage(chats=receiver_config.chats_to_monitor))
 async def handle_nft(event):
-    sender_name = event.sender.username
-    message_chat = event.chat.username if event.chat.username else await event.get_sender().username
-    # message_info = event.message.to_dict()
+    # TODO: sometimes sender_name is None
+    message_chat = event.chat.username # if event.chat.username else await event.get_sender().username
     message_text = event.message.message
+    sender = await event.message.get_sender()
+    sender_name = event.sender.username if event.sender.username else sender.username
+    # sender_name = await event.message.get_sender().username
 
     if not message_text:
         return
-
+    # sender = await event.get_sender()
     media_path = await receiver_bot.download_media(event.message.media, str(images_path))
 
     # media_path = get_media_paths(media_path)
-
 
     message = Message(
         sender_nickname=sender_name,
@@ -72,10 +70,6 @@ async def handle_nft(event):
 
     if media_path:
         Path(media_path).unlink(missing_ok=True)
-    # await receiver_bot.send_message('etokarinakarina', ev)
-
-
-
 
 
 @sender_bot.message_handler(func=lambda message: 'nft' in message.text.lower())
@@ -92,5 +86,3 @@ Thread(target=sender_bot.infinity_polling).start()
 
 receiver_bot.start()
 receiver_bot.run_until_disconnected()
-
-# def

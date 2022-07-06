@@ -4,7 +4,7 @@ import os
 import sys
 
 print(sys.executable)
-dotenv.load_dotenv('.env')
+dotenv.load_dotenv('app/.env')
 
 sender_bot = telebot.TeleBot(os.getenv('BOT_TOKEN'))
 
