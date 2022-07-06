@@ -47,12 +47,15 @@ async def handle_nft(event):
     message_chat = event.chat.username # if event.chat.username else await event.get_sender().username
     message_text = event.message.message
     sender = await event.message.get_sender()
-    sender_name = event.sender.username if event.sender.username else sender.username
-    # sender_name = await event.message.get_sender().username
+    if event.sender.username:
+        sender_name = event.sender.username
+    elif sender.username:
+        sender_name = sender.username
+    else:
+        sender_name = sender.first_name
 
     if not message_text:
         return
-    # sender = await event.get_sender()
     media_path = await receiver_bot.download_media(event.message.media, str(images_path))
 
     # media_path = get_media_paths(media_path)
